@@ -2,7 +2,7 @@
 # import torch
 import warnings
 # import string
-# import time
+import time
 # import re
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
@@ -77,21 +77,26 @@ def create_chat_prompt_template():
     return prompt
 
 def create_prompt_template():
-    template = """Context: {context}
-    Question: {question}
-    Answer: Let's think step by step."""
+    template = """引用: {context}
+    问题: {question}
+    答案: 我一步一步推理..."""
     prompt = PromptTemplate.from_template(template)
     return prompt
 
-def create_chain(question, context):
+def create_chain(llm, question, context):
     prompt = create_prompt_template
-
-
+    formatted_prompt = prompt.format(question=question, context=context)
+    chain = formatted_prompt | llm
+    return chain
 
 def chat_v1():
+    rag_time_before = time.time()
     texts = text_splitter()
     chroma_db = init_vector_database(texts)
+    rag_time_after = time.time()
     # ollama_db = init_vectorstore_ollama(texts)
+    llm_time_before = time.time()
+    retrieval_time = rag_time_after - rag_time_before
     tokenizer, model = init_pretrained_model()
     llm = create_pipeline(tokenizer, model)
     question = "三国演义的作者"
@@ -100,11 +105,13 @@ def chat_v1():
     prompt = create_prompt_template()
     formatted_prompt = prompt.format(question=question, context=context)
     response = llm.invoke(formatted_prompt)
+    llm_time_after = time.time()
+    llm_time = llm_time_after - llm_time_before
+    total_time = retrieval_time + llm_time
     print(response)
 
 
 # 3. 初始化检索器
-# retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
 # bm25_retriever = BM25Retriever.from_documents(texts)
 # bm25_retriever.k = 10
 
@@ -136,20 +143,6 @@ def chat_v1():
 #     result = re.sub(r'[\n\r]+', ' ', result)
 #     result = re.sub(r'([一二三四五六七八九十]+、|\d+\.)\s*', '', result)
 #     return result
-
-# 8. 处理查询
-# def process(query):
-#     rag_time_before = time.time()
-#     docs = compression_retriever.get_relevant_documents(query)
-#     rag_time_after = time.time()
-#     retrieval_time = rag_time_after - rag_time_before
-#     llm_time_before = time.time()
-#     retrieval_words = format_docs(docs)
-#     result = chain_answer.invoke({"context": retrieval_words, "query": query})
-#     llm_time_after = time.time()
-#     llm_time = llm_time_after - llm_time_before
-#     total_time = retrieval_time + llm_time
-#     return retrieval_words, result, retrieval_time, llm_time, total_time
 
 # 示例运行
 if __name__ == "__main__":
