@@ -1,14 +1,7 @@
-# import os
-# import torch
 import warnings
-# import string
 import time
-# import re
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_text_splitters import RecursiveCharacterTextSplitter, TokenTextSplitter
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from langchain_community.embeddings import SentenceTransformerEmbeddings # HuggingFaceBgeEmbeddings
-# from langchain_community.embeddings.ollama import OllamaEmbeddings
+from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from langchain_community.vectorstores import Chroma
@@ -19,34 +12,10 @@ warnings.filterwarnings("ignore")
 model_path = 'pretrained_models/DeepSeek-R1-Distill-Qwen-7B-GGUF'
 gguf_file_name = 'DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf'
 
-def text_splitter():
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=100,
-        chunk_overlap=50,
-        length_function=len,
-        is_separator_regex=False,
-        separators=["\n\n", "\n", " ", "。", "！", "？", "；", "...", ".", "!", "?", ";"]
-    )
-    data = DirectoryLoader("./", glob=r"*.txt", loader_cls=TextLoader).load()
-    texts = splitter.split_documents(data)
-
-    return texts
-
-def token_text_splitter():
-    splitter = TokenTextSplitter(
-        chunk_size=100,
-        chunk_overlap=50
-    )
-    data = DirectoryLoader("./", glob=r"*.txt", loader_cls=TextLoader).load()
-    texts = splitter.split_documents(data)
-
-    return texts
-
-def init_vector_database(raw_texts):
+def init_existing_vector_database():
     embedding_function = SentenceTransformerEmbeddings(model_name="./pretrained_models/all-MiniLM-L6-v2")
-    chroma_db = Chroma.from_documents(persist_directory='./chroma.db', documents=raw_texts, embedding=embedding_function)
-    chroma_db.persist()
-    return chroma_db
+    db = Chroma(persist_directory="./chroma.db", embedding_function=embedding_function)
+    return db
 
 # def init_vectorstore_ollama(raw_texts):
 #     raw_texts = text_splitter()
@@ -55,8 +24,9 @@ def init_vector_database(raw_texts):
 #     return ollama_db
 
 def init_pretrained_model():
+    print("init model...")
     tokenizer = AutoTokenizer.from_pretrained(model_path, gguf_file=gguf_file_name)
-    model = AutoModelForCausalLM.from_pretrained(model_path, gguf_file=gguf_file_name).half()
+    model = AutoModelForCausalLM.from_pretrained(model_path, gguf_file=gguf_file_name, load_in_4bit=True).half()
     return tokenizer, model
 
 def init_retriever(vector_db):
@@ -91,15 +61,14 @@ def create_chain(llm, question, context):
 
 def chat_v1():
     rag_time_before = time.time()
-    texts = text_splitter()
-    chroma_db = init_vector_database(texts)
+    chroma_db = init_existing_vector_database()
     rag_time_after = time.time()
+    retrieval_time = rag_time_after - rag_time_before
     # ollama_db = init_vectorstore_ollama(texts)
     llm_time_before = time.time()
-    retrieval_time = rag_time_after - rag_time_before
     tokenizer, model = init_pretrained_model()
     llm = create_pipeline(tokenizer, model)
-    question = "三国演义的作者"
+    question = "谁参加了桃园三结义"
     related_docs = chroma_db.similarity_search(question, k=2)
     context = "\n".join([doc.page_content for doc in related_docs])
     prompt = create_prompt_template()
@@ -108,6 +77,7 @@ def chat_v1():
     llm_time_after = time.time()
     llm_time = llm_time_after - llm_time_before
     total_time = retrieval_time + llm_time
+    print(total_time)
     print(response)
 
 
