@@ -8,8 +8,8 @@ from langchain_community.vectorstores import Chroma
 
 warnings.filterwarnings("ignore")
 
-model_path = 'pretrained_models/DeepSeek-R1-Distill-Qwen-7B-GGUF'
-gguf_file_name = 'DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf'
+model_path = 'pretrained_models/DeepSeek-R1-Distill-Qwen-14B-GGUF'
+gguf_file_name = 'DeepSeek-R1-Distill-Qwen-14B-Q8_0.gguf'
 
 def init_existing_vector_database(question):
     embedding_function = HuggingFaceBgeEmbeddings(model_name="pretrained_models/bge-large-zh")
