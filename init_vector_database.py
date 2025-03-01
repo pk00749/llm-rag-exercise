@@ -8,14 +8,14 @@ def text_splitter():
     print("Splitting text...")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=100,
-        chunk_overlap=50,
+        chunk_overlap=20,
         length_function=len,
         is_separator_regex=False,
         separators=["\n\n", "\n", " ", "。", "！", "？", "；", "...", ".", "!", "?", ";"]
     )
     data = DirectoryLoader("./", glob=r"*.txt", loader_cls=TextLoader).load()
     texts = splitter.split_documents(data)
-
+    print("Done.")
     return texts
 
 
