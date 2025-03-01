@@ -72,4 +72,4 @@ def chat(question):
 
 # 示例运行
 if __name__ == "__main__":
-    chat("谁失手街亭")
+    chat("夏侯渊最后战死了吗？")
