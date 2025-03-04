@@ -39,7 +39,7 @@ def init_existing_vector_database(question):
 
 def init_pretrained_model():
     print(f"Initialing model {gguf_file_name}...")
-    llm = Llama(model_path=f"./{model_path}/{gguf_file_name}")
+    llm = Llama(model_path=f"./{model_path}/{gguf_file_name}", n_gpu_layers=-1, n_threads=10, n_threads_batch=10)
     print("Done")
     return llm
 
@@ -72,4 +72,4 @@ def chat(question):
 
 # 示例运行
 if __name__ == "__main__":
-    chat("夏侯渊最后战死了吗？")
+    chat("夏侯淳最后战死了吗？")
