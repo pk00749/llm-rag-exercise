@@ -53,16 +53,14 @@ def init_milvus():
     )
     client.create_index(collection_name="demo_collection", index_params=index_params)
     print("Done")
-    return client
 
 
-def insert_vector_data(client, chunks):
+def insert_vector_data(chunks):
     client = MilvusClient("./milvus_demo.db")
     print("Inserting vectors into Milvus...")
     # 加载嵌入模型
     model = SentenceTransformer("./pretrained_models/bge-large-zh-v1.5")
     vectors = model.encode(chunks)
-    print(vectors.shape)
 
     # 插入数据
     length_vectors = len(vectors)
@@ -76,39 +74,28 @@ def insert_vector_data(client, chunks):
     )
     print("Done")
 
-    query = "谁参与桃园结义"
-    embed_query = model.encode(query)
-    res = client.search(collection_name="demo_collection",
-                                     data=[embed_query],
-                                     limit=1)
-    for hints in res:
-        for hint in hints:
-            print(hint)
 
-
-def query_vector_data(query):
-    print("querying...")
-    client = MilvusClient("./milvus_demo.db")
-    print("Inserting vectors into Milvus...")
-    # 加载嵌入模型
-    model = SentenceTransformer("./pretrained_models/bge-large-zh-v1.5")
-    embed_query = model.encode(query)
-    res = client.search(collection_name="demo_collection",
-                         data=[embed_query],
-                         limit=1,
-                        output_fields=["text"])
-    # retrieved_texts = [result[0].entity.get("text") for result in res]
-    retrieved_text_lists = []
-    for hints in res:
-        for hint in hints:
-            print(hint)
-            hint.get('entity')
-            retrieved_text_lists.append(hint.get('entity').get('text'))
-    print("Done")
-    return retrieved_text_lists
+# def query_vector_data(query):
+#     client = MilvusClient("./milvus_demo.db")
+#     print("Inserting vectors into Milvus...")
+#     # 加载嵌入模型
+#     model = SentenceTransformer("./pretrained_models/bge-large-zh-v1.5")
+#     embed_query = model.encode(query)
+#     res = client.search(collection_name="demo_collection",
+#                          data=[embed_query],
+#                          limit=1,
+#                         output_fields=["text"])
+#     # retrieved_texts = [result[0].entity.get("text") for result in res]
+#     retrieved_text_lists = []
+#     for hints in res:
+#         for hint in hints:
+#             print(hint)
+#             hint.get('entity')
+#             retrieved_text_lists.append(hint.get('entity').get('text'))
+#     return retrieved_text_lists
 
 if __name__ == "__main__":
-    # text_chunks = text_splitter()
-    # client = init_milvus()
-    # insert_vector_data(client, text_chunks)
-    query_vector_data("谁参与桃园结义")
+    init_milvus()
+    text_chunks = text_splitter()
+    insert_vector_data(text_chunks)
+    # query_vector_data("谁参与桃园结义")
